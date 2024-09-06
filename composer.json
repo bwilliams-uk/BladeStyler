@@ -1,0 +1,15 @@
+{
+    "name": "williams/bladestyler",
+    "description": "Adds functionality for maintaining consistent styling when using utility-first CSS frameworks, such as Tailwind, in Laravel Blade files.",
+    "autoload": {
+        "psr-4": {
+            "Williams\\BladeStyler\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "bwilliams-uk"
+        }
+    ],
+    "require": {}
+}
