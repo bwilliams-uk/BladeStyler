@@ -1,6 +1,6 @@
 # BladeStyler
 
-BladeStyler is a Laravel extension designed to help maintain consistent styling across UI components, particularly suited for utility-first CSS frameworks like Tailwind.
+BladeStyler is a Laravel extension designed to help maintain consistent styling within views and components, particularly suited for utility-first CSS frameworks like Tailwind.
 
 ## Installation & Setup
 
@@ -10,91 +10,128 @@ BladeStyler is installed using Composer. To install BladeStyler, run the followi
 composer require williams/bladestyler
 ```
 
-Next, specify which views should have BladeStyler enabled by adding `BladeStyler::initialize($views)` to the `boot()` method of your project's `AppServiceProvider.php` file.
+## Directives
 
-```php
-<?php
-use Williams\BladeStyler\BladeStyler;
+BladeStyler introduces five new blade directives:
 
-class AppServiceProvider(){
-    public function boot(){
-        BladeStyler::initialize(['partials.alert']); //Array of views with BladeStyler enabled
-    }
-}
-```
+- `@bs_set` - for defining reusable style class combinations.
 
-## Usage
+- `@bs_class` - for applying class tags with the specified styles.
+
+- `@bs_merge` - for merging style classes into blade component attributes.
+
+- `@bs_string` - for printing the style classes as a string without any attribute handling.
+
+- `@bs_clear` - for clearing definitions previously created with the `@bs_set` directive.
 
 **Defining Styles**
 
-BladeStyler introduces the `@setStyles` directive, allowing you to create reusable class aliases for UI components:
+Use `@bs_set` to define aliases for class style combinations:
 
-```php
-// styles.blade.php
-
-@setStyles([
+```blade
+@bs_set([
     'alert' => 'p-2 border',
     'success' => 'text-green-800 border-green-800 bg-green-200',
     'error' => 'text-red-800 border-red-800 bg-red-200'
 ])
 ```
 
-**Using Styles**
+**Applying styles**
 
-You can apply these styles within components using the `@applyStyles` directive:
+You can apply these styles to HTML elements using the `@bs_class` directive:
 
-```php
-// partials/alert.blade.php
+```blade
+<div @bs_class('alert success')>Alert Message</div>
+```
 
-@include('styles')
-<div @applyStyles('alert success')>Alert Message</div>
+This will produce the following output:
 
-// Will be rendered as:
+```blade
 <div class="p-2 border text-green-800 border-green-800 bg-green-200">Alert Message</div>
 ```
 
-If you would prefer to handle  the `class=""`  attribute yourself, the `@styles` directive can be used:
+**Merging Attributes**
 
-```php
-<div class="@style('alert success')">Alert Message</div>
+BladeStyler offers a short, elegant solution for merging style classes  into a Blade component's attribute bag with the `@bs_merge` directive:
+
+```blade
+//components/button.blade.php
+
+@props(['kind'=>'primary']) // Set default button as 'primary'
+
+@bs_set([
+    'primary' => 'text-white bg-blue-500 hover:bg-blue-800 rounded',
+    'md' => 'p-2' 
+])
+
+<button @bs_merge($kind)>{{slot}}</button>
 ```
 
-Alternatively, to obtain the styles in the context of PHP tags:
+Using the component:
 
-```php
-@php
-$styles = $_style('alert'); // 'p-2 border'
-@endphp
+```blade
+<x-button kind="primary md" type="submit">Submit</x-button>
 ```
+
+This will produce:
+
+```blade
+<button class="text-white bg-blue-500 hover:bg-blue-800 rounded p-2" type="submit">Submit</button>
+```
+
+**Obtaining classes as a string**
+
+If the class list is required without class tags, use `@bs_string`:
+
+```blade
+<div class="@bs_string('alert success')">Alert Message</div>
+```
+
+**Clearing style definitions**
+
+`@bs_clear` can be used to remove all or a specific definition:
+
+```blade
+@bs_set([
+    'alert' => 'p-2 border',
+    'success' => 'text-green-800 border-green-800 bg-green-200',
+    'error' => 'text-red-800 border-red-800 bg-red-200'
+])
+
+{{--Remove a single definition--}}
+@bs_clear('success') 
+@bs_string('alert success') {-- Output: p-2 border success --}
+
+{{-- remove all definitions --}}
+@bs_clear 
+@bs_string('alert success') {-- Output: alert success --}
+
+```
+
+## Additional Features
 
 **Conditional Styling**
 
-BladeStyler supports conditional styling, similar to Laravel's `@class` directive:
+The `@bs_class`, `@bs_merge` and `@bs_string` all support conditional styling, similar to Laravel's `@class` directive:
 
-```php
-<div @applyStyles(
+```blade
+<div @bs_class([
     'alert',
-    'success' => ($alertType == 'success'), 
-    'error' => ($alertType == 'error'))>Alert Message</div>
+    'success' => !$isError, 
+    'error' => $isError
+])>Alert Message</div>
 ```
 
 **Class Passthrough**
 
-If a class is not registered using the `@setStyles` directive, it will be passed through directly to the generated HTML:
+If a class is not registered using the `@bs_set` directive, it will be passed through directly to the generated HTML. This allows additional utility classes to be applied as required:
 
-```php
-<div @applyStyles('alert mb-2')>Alert Message</div>
-
-// Will be rendered as:
-<div class="p-2 border mb-2">Alert Message</div>
+```blade
+<div @bs_class('alert mb-2')>Alert Message</div>
 ```
 
-## Benefits of BladeStyler
+This will produce:
 
-While utility-first frameworks, like [Tailwind CSS](https://tailwindcss.com/docs/reusing-styles), often advise against creating an abstraction layer, there are scenarios where such an approach is necessary. BladeStyler provides an abstraction layer with key advantages that address common concerns:
-
-- **Clear HTML Output**: The generated HTML retains the underlying utility classes, making it simple to see exactly which styling attributes are applied.
-
-- **Simplified UI Development**: No need to manage external CSS files—BladeStyler streamlines the process directly within Blade templates.
-
-- **Component-Level Styling**: Styles can be scoped to individual components rather than applied globally, offering more flexibility and control.
+```blade
+<div class="p-2 border mb-2">Alert Message</div>
+```

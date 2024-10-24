@@ -11,5 +11,12 @@
             "name": "bwilliams-uk"
         }
     ],
-    "require": {}
+    "require": {},
+	"extra": {
+        "laravel": {
+            "providers": [
+                "Williams\\BladeStyler\\ServiceProvider"
+            ]
+        }
+    }
 }
